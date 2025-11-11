@@ -1,12 +1,13 @@
 from collections.abc import Iterable
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Self, assert_never, override
+from typing import Self, assert_never, final, override
 
 from lib.char import CharClass
 from lib.core import Consts, CoreIter
 
 
+@final
 @dataclass(frozen = True)
 class PatternUnion:
     first:  "Regex"
@@ -21,6 +22,7 @@ class PatternUnion:
         return str(self)
 
 
+@final
 class Regex:
 
     @override
