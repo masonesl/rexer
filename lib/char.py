@@ -1,6 +1,7 @@
 from typing import Self, assert_never, final, override
 
 from lib.core import Consts, CoreIter
+from lib.quantifier import Quantifier
 
 
 @final
@@ -24,6 +25,8 @@ class CharClass:
         if ss[0] == Consts.OBRACK:
             ss.append(Consts.CBRACK)
 
+        ss.append(self.__quantifier)
+
         return ''.join(ss)
 
     @override
@@ -31,7 +34,8 @@ class CharClass:
         return str(self)
 
     def __init__(self):
-        self.__chars: list[str] = []
+        self.__chars:      list[str]  = []
+        self.__quantifier: Quantifier = Quantifier.ONE
 
     def add_char(self, ch: str):
         if len(ch) == 0:
@@ -60,6 +64,13 @@ class CharClass:
 
     def add_whitespace(self):
         self.add_char(' ')
+
+    def set_quantifier(self, quantifier: Quantifier):
+        self.__quantifier = quantifier
+
+    def with_quantifier(self, quantifier: Quantifier) -> Self:
+        self.set_quantifier(quantifier)
+        return self
 
     def with_whitespace(self) -> Self:
         self.add_whitespace()

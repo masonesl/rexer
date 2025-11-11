@@ -20,6 +20,10 @@ class Consts:
 
     DASH = '-'
 
+    ZERO_OR_ONE  = '?'
+    ZERO_OR_MORE = '*'
+    ONE_OR_MORE  = '+'
+
 
 @final
 class CoreIter[T]:
@@ -54,7 +58,7 @@ class CoreIter[T]:
         for e in self:
             fn(e)
 
-    def map[R](self, fn: Callable[[T], R]) -> 'CoreIter[R]':
+    def map[R](self, fn: Callable[[T], R]) -> "CoreIter[R]":
         new: list[R] = []
         self.foreach(lambda e: new.append(fn(e)))
         return CoreIter(new)

@@ -5,21 +5,26 @@ from typing import Self, assert_never, final, override
 
 from lib.char import CharClass
 from lib.core import Consts, CoreIter
+from lib.quantifier import Quantifier
 
 
 @final
-@dataclass(frozen = True)
-class PatternUnion:
-    first:  "Regex"
-    second: "Regex"
+@dataclass
+class RegexUnion:
+    first:      "Regex"
+    second:     "Regex"
+    quantifier: Quantifier = Quantifier.ONE
 
     @override
     def __str__(self) -> str:
-        return f"{self.first}{Consts.UNION}{self.second}"
+        return f"{self.first}{Consts.UNION}{self.second}{self.quantifier}"
     
     @override
     def __repr__(self) -> str:
         return str(self)
+
+    def set_quantifier(self, quantifier: Quantifier):
+        self.quantifier = quantifier
 
 
 @final
@@ -30,6 +35,7 @@ class Regex:
         ss: list[str] = [Consts.OPAREN]
         CoreIter(self.__patterns).foreach(lambda p: ss.append(str(p)))
         ss.append(Consts.CPAREN)
+        ss.append(self.__quantifier)
         return ''.join(ss)
 
     @override
@@ -37,7 +43,8 @@ class Regex:
         return str(self)
 
     def __init__(self, s: Iterable[str] | CoreIter[str], *, top: bool = True):
-        self.__patterns: "list[Self | CharClass | PatternUnion]" = []
+        self.__patterns:   "list[Self | CharClass | RegexUnion]" = []
+        self.__quantifier: Quantifier = Quantifier.ONE
 
         match s:
             case CoreIter():
@@ -56,11 +63,13 @@ class Regex:
                 case Consts.BSLASH:
                     self.parse_escape_char(sit)
                 case Consts.UNION:
-                    union = PatternUnion(deepcopy(self), self.__class__(sit, top = top))
+                    union = RegexUnion(deepcopy(self), self.__class__(sit, top = top))
                     self.__patterns.clear()
                     self.__patterns.append(union)
                     if not top:
                         sit.putback()
+                case (Consts.ZERO_OR_ONE | Consts.ZERO_OR_MORE | Consts.ONE_OR_MORE) as q:
+                    self.__patterns[-1].set_quantifier(Quantifier(q))
                 case str(ch):
                     self.__patterns.append(CharClass().with_char(ch))
                 case _:
@@ -68,6 +77,9 @@ class Regex:
 
         if not top and ch != Consts.CPAREN:
             raise Exception("Unterminated regex group")
+
+    def set_quantifier(self, quantifier: Quantifier):
+        self.__quantifier = quantifier
 
     def parse_escape_char(self, sit: CoreIter[str]):
         match (ch := sit.next()):
