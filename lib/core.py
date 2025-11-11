@@ -3,10 +3,31 @@ from typing import Callable, final
 
 
 @final
+class Consts:
+
+    # Add these punctuators because nvim or treesitter doesn't
+    # like when there is an opening bracket without a closing one.
+    OPAREN = '('
+    CPAREN = ')'
+    OBRACK = '['
+    CBRACK = ']'
+    OCURLY = '{'
+    CCURLY = '}'
+
+    BSLASH = '\\'
+
+    UNION = '|'
+
+    DASH = '-'
+
+
+@final
 class CoreIter[T]:
     def __init__(self, obj: Iterable[T]):
         self.__obj:  Iterable[T] = obj
         self.__iter: Iterator[T] = iter(obj)
+        self.__prev: T | None    = None
+        self.__next: T | None    = None
 
     def __iter__(self) -> Iterator[T]:
         return self.__iter
@@ -14,9 +35,18 @@ class CoreIter[T]:
     def __next__(self) -> T:
         return next(self.__iter)
 
+    def putback(self):
+        self.__next = self.__prev
+
     def next[D](self, default: D = None) -> T | D:
+        if self.__next is not None:
+            n = self.__next
+            self.__next = None
+            return n
+
         try:
-            return next(self)
+            self.__prev = next(self)
+            return self.__prev
         except StopIteration:
             return default
 
