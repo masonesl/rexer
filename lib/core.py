@@ -14,11 +14,10 @@ class Consts:
     OCURLY = '{'
     CCURLY = '}'
 
-    BSLASH = '\\'
-
-    UNION = '|'
-
-    DASH = '-'
+    BSLASH   = '\\'
+    UNION    = '|'
+    DASH     = '-'
+    WILDCARD = '.'
 
     ZERO_OR_ONE  = '?'
     ZERO_OR_MORE = '*'

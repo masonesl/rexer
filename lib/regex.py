@@ -68,6 +68,8 @@ class Regex:
                     self.__patterns.append(union)
                     if not top:
                         sit.putback()
+                case Consts.WILDCARD:
+                    self.__patterns.append(CharClass().with_wildcard())
                 case (Consts.ZERO_OR_ONE | Consts.ZERO_OR_MORE | Consts.ONE_OR_MORE) as q:
                     self.__patterns[-1].set_quantifier(Quantifier(q))
                 case str(ch):

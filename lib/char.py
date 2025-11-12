@@ -9,6 +9,9 @@ class CharClass:
 
     @override
     def __str__(self) -> str:
+        if self.__wildcard:
+            return f"[[{Consts.WILDCARD}]]"
+
         ss: list[str] = []
         if len(chars := self.group_chars()) > 1 or isinstance(chars[0], tuple):
             ss.append(Consts.OBRACK)
@@ -36,6 +39,7 @@ class CharClass:
     def __init__(self):
         self.__chars:      list[str]  = []
         self.__quantifier: Quantifier = Quantifier.ONE
+        self.__wildcard:   bool       = False
 
     def add_char(self, ch: str):
         if len(ch) == 0:
@@ -67,6 +71,14 @@ class CharClass:
 
     def set_quantifier(self, quantifier: Quantifier):
         self.__quantifier = quantifier
+
+    def set_wildcard(self):
+        assert len(self.__chars) == 0
+        self.__wildcard = True
+
+    def with_wildcard(self) -> Self:
+        self.set_wildcard()
+        return self
 
     def with_quantifier(self, quantifier: Quantifier) -> Self:
         self.set_quantifier(quantifier)
