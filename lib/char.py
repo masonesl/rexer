@@ -36,6 +36,18 @@ class CharClass:
     def __repr__(self) -> str:
         return str(self)
 
+    @property
+    def chars(self) -> list[str]:
+        return self.__chars
+
+    @property
+    def quantifier(self) -> Quantifier:
+        return self.__quantifier
+
+    @property
+    def wildcard(self) -> bool:
+        return self.__wildcard
+
     def __init__(self):
         self.__chars:      list[str]  = []
         self.__quantifier: Quantifier = Quantifier.ONE

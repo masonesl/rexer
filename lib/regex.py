@@ -1,6 +1,5 @@
 from collections.abc import Iterable
-from copy import deepcopy
-from dataclasses import dataclass
+from copy import copy
 from typing import Self, assert_never, final, override
 
 from lib.char import CharClass
@@ -8,12 +7,21 @@ from lib.core import Consts, CoreIter
 from lib.quantifier import Quantifier
 
 
+type Pattern = Regex | CharClass | RegexUnion
+
+
 @final
-@dataclass
 class RegexUnion:
-    first:      "Regex"
-    second:     "Regex"
-    quantifier: Quantifier = Quantifier.ONE
+
+    @staticmethod
+    def get_regex(regex: "Regex | list[Pattern]") -> "Regex":
+        match regex:
+            case Regex() as r:
+                return r
+            case list(ps):
+                return Regex.from_patterns(ps)
+            case _:
+                assert_never(regex)
 
     @override
     def __str__(self) -> str:
@@ -23,12 +31,35 @@ class RegexUnion:
     def __repr__(self) -> str:
         return str(self)
 
+    @property
+    def first(self) -> "Regex":
+        return self.__first
+
+    @property
+    def second(self) -> "Regex":
+        return self.__second
+
+    @property
+    def quantifier(self) -> Quantifier:
+        return self.__quantifier
+
+    def __init__[R: "Regex | list[Pattern]"](self, first: R, second: R):
+        self.__first:      "Regex"    = self.get_regex(first)
+        self.__second:     "Regex"    = self.get_regex(second)
+        self.__quantifier: Quantifier = Quantifier.ONE
+
     def set_quantifier(self, quantifier: Quantifier):
-        self.quantifier = quantifier
+        self.__quantifier = quantifier
 
 
 @final
 class Regex:
+
+    @classmethod
+    def from_patterns(cls, patterns: list[Pattern]) -> Self:
+        r = cls("")
+        r.__patterns = copy(patterns)
+        return r
 
     @override
     def __str__(self) -> str:
@@ -42,15 +73,23 @@ class Regex:
     def __repr__(self) -> str:
         return str(self)
 
+    @property
+    def patterns(self) -> list[Pattern]:
+        return self.__patterns
+
+    @property
+    def quantifier(self) -> Quantifier:
+        return self.__quantifier
+
     def __init__(self, s: Iterable[str] | CoreIter[str], *, top: bool = True):
-        self.__patterns:   "list[Self | CharClass | RegexUnion]" = []
+        self.__patterns:   list[Pattern] = []
         self.__quantifier: Quantifier = Quantifier.ONE
 
         match s:
-            case CoreIter():
-                sit = s
-            case Iterable():
-                sit = CoreIter(s)
+            case CoreIter() as coreit:
+                sit = coreit
+            case Iterable() as it:
+                sit = CoreIter(it)
             case _:
                 assert_never(s)
 
@@ -63,7 +102,7 @@ class Regex:
                 case Consts.BSLASH:
                     self.parse_escape_char(sit)
                 case Consts.UNION:
-                    union = RegexUnion(deepcopy(self), self.__class__(sit, top = top))
+                    union = RegexUnion(self.__patterns, self.__class__(sit, top = top))
                     self.__patterns.clear()
                     self.__patterns.append(union)
                     if not top:
