@@ -1,4 +1,6 @@
-from typing import Self, assert_never, final, override
+from collections.abc import Iterable, Iterator
+from copy import copy
+from typing import Self, assert_never, cast, final, override
 
 from lib.core import Consts, CoreIter
 from lib.quantifier import Quantifier
@@ -9,7 +11,7 @@ class CharClass:
 
     @override
     def __str__(self) -> str:
-        if self.__wildcard:
+        if self.wildcard:
             return f"[[{Consts.WILDCARD}]]"
 
         ss: list[str] = []
@@ -28,9 +30,22 @@ class CharClass:
         if ss[0] == Consts.OBRACK:
             ss.append(Consts.CBRACK)
 
-        ss.append(self.__quantifier)
+        ss.append(self.quantifier)
 
         return ''.join(ss)
+
+    @override
+    def __hash__(self) -> int:
+        ccpy = cast(list[str | Quantifier | bool], copy(self.chars))
+        ccpy.extend((self.quantifier, self.wildcard))
+        return hash(tuple(ccpy))
+
+    @override
+    def __eq__(self, value: object, /) -> bool:
+        assert isinstance(value, "CharClass")
+        return ( self.chars      == value.chars      and
+                 self.quantifier == value.quantifier and
+                 self.wildcard   == value.wildcard )
 
     @override
     def __repr__(self) -> str:
@@ -53,11 +68,14 @@ class CharClass:
         self.__quantifier: Quantifier = Quantifier.ONE
         self.__wildcard:   bool       = False
 
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.chars)
+
     def add_char(self, ch: str):
         if len(ch) == 0:
             raise Exception("Cannot add empty string to character class")
-        if len(ch) > 1:
-            raise Exception("Cannot add multi-character string to character class")
+
+        assert len(ch) == 1
 
         self.__chars.append(ch)
         self.__chars.sort()
@@ -119,7 +137,7 @@ class CharClass:
     def group_chars(self) -> list[str | tuple[str, str]]:
         chars: list[str | tuple[str, str]] = []
 
-        cit = CoreIter(self.__chars)
+        cit = CoreIter(self)
         ch = cit.next()
         while ch is not None:
             start_ch = end_ch = ch
@@ -132,3 +150,15 @@ class CharClass:
                 chars.append((start_ch, end_ch))
 
         return chars
+
+    def strip(self, others: Iterable[Self]):
+        (CoreIter(others)
+            .foreach(lambda other: (
+                CoreIter(other)
+                    .filter(lambda ch: ch in self)
+                    .foreach(lambda ch: self.remove_char(ch))
+            ))
+        )
+
+    def remove_char(self, char: str):
+        self.__chars.remove(char)
