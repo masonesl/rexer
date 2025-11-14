@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Iterator
-from typing import Callable, final
+from typing import Callable, final, override
 
 
 @final
@@ -14,17 +14,18 @@ class Consts:
     OCURLY = '{'
     CCURLY = '}'
 
+    # reserved characters
     BSLASH   = '\\'
     UNION    = '|'
     DASH     = '-'
     WILDCARD = '.'
 
+    # quantifier characters
     ZERO_OR_ONE  = '?'
     ZERO_OR_MORE = '*'
     ONE_OR_MORE  = '+'
 
 
-@final
 class CoreIter[T]:
     def __init__(self, obj: Iterable[T]):
         self.__obj:  Iterable[T] = obj
@@ -57,6 +58,10 @@ class CoreIter[T]:
         for e in self:
             fn(e)
 
+    def foreach_enum(self, fn: Callable[[int, T], None]):
+        for i, e in enumerate(self):
+            fn(i, e)
+
     def map[R](self, fn: Callable[[T], R]) -> "CoreIter[R]":
         new: list[R] = []
         self.foreach(lambda e: new.append(fn(e)))
@@ -76,6 +81,16 @@ class CoreIter[T]:
             if fn(e):
                 return True
         return False
+
+    def filter(self, fn: Callable[[T], bool]) -> "CoreIter[T]":
+        new: list[T] = []
+        self.foreach(lambda e: new.append(e) if fn(e) else None)
+        return CoreIter(new)
+
+    def filtermap[R](self, fn: Callable[[T], R | None]) -> "CoreIter[R]":
+        new: list[R] = []
+        self.foreach(lambda e: new.append(n) if (n := fn(e)) is not None else None)
+        return CoreIter(new)
 
 
 def foreach[T](fn: Callable[[T], None], obj: Iterable[T]):
