@@ -1,6 +1,7 @@
 import sys
 
 from lib.core import CoreIter
+from lib.dfa import Dfa
 from lib.nfa import Nfa
 from lib.regex import Regex
 
@@ -13,4 +14,5 @@ if __name__ == "__main__":
     (CoreIter(sys.argv[2:])
         .map(lambda s: Regex(s))
         .map(lambda r: Nfa().with_regex(r))
-        .foreach(lambda sm: print(sm)))
+        .map(lambda s: Dfa.from_nfa(s))
+        .foreach(lambda s: print(s)))
