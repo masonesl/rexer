@@ -46,6 +46,31 @@ class NfaState(State):
         self.add_epsilon_transition(next)
         return self
 
+    def get_epsilon_reachable(self) -> set[Self]:
+        visited: set[Self] = set()
+        to_visit           = [self]
+
+        while len(to_visit) > 0:
+            state = to_visit.pop()
+            (CoreIter(state.epsilons)
+                .foreach(lambda st: to_visit.append(st) if st not in visited else None))
+            visited.add(state)
+
+        return visited
+
+    def get_epsilon_transitionable(self) -> dict[CharClass, Self]:
+        transitions: dict[CharClass, Self] = {}
+        reachable_states = self.get_epsilon_reachable()
+
+        (CoreIter(reachable_states)
+            .foreach(lambda st: (
+                CoreIter(st.transitions.items())
+                    .foreach(lambda t: transitions.update({t[0] : t[1]}))
+            ))
+        )
+
+        return transitions
+
 
 @final
 class Nfa(StateMachine[NfaState]):
